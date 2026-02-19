@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Something Special | AsrixBD</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700&family=Playfair+Display:italic,wght@700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    
+    <style>
+        :root {
+            --bg: #050505;
+            --accent: #ff4d6d;
+            --glass: rgba(255, 255, 255, 0.04);
+            --border: rgba(255, 255, 255, 0.12);
+            --text: #ffffff;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body, html { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; }
+
+        /* --- 3D Canvas Layer --- */
+        #canvas-container { position: fixed; inset: 0; z-index: -1; background: radial-gradient(circle at center, #1a0a0d 0%, #050505 100%); }
+
+        /* --- Intro Overlay --- */
+        #intro {
+            position: fixed; inset: 0; background: var(--bg); z-index: 100;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: all 1s cubic-bezier(0.8, 0, 0.2, 1);
+            text-align: center;
+        }
+
+        .unlock-btn {
+            padding: 1.2rem 3.5rem; background: none; border: 1px solid var(--accent);
+            color: var(--accent); letter-spacing: 4px; cursor: pointer; border-radius: 50px;
+            transition: 0.4s; backdrop-filter: blur(10px); font-weight: 700; text-transform: uppercase;
+        }
+
+        .unlock-btn:hover { background: var(--accent); color: white; box-shadow: 0 0 40px var(--accent); transform: scale(1.05); }
+
+        /* --- Story Layout --- */
+        #story-container {
+            height: 100vh; display: flex; align-items: center; justify-content: center;
+            perspective: 1200px;
+        }
+
+        .glass-card {
+            background: var(--glass); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
+            border: 1px solid var(--border); border-radius: 40px;
+            padding: 4rem 2.5rem; max-width: 550px; width: 90%; text-align: center;
+            position: absolute; display: none; opacity: 0;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.6);
+        }
+
+        .glass-card.active { display: block; }
+
+        h2 { font-family: 'Playfair Display', serif; font-size: clamp(2rem, 6vw, 3rem); margin-bottom: 1.5rem; }
+        p { font-size: 1.15rem; opacity: 0.9; font-weight: 300; line-height: 1.8; }
+        .highlight { color: var(--accent); font-weight: 700; }
+        
+        .final-card { border: 2px solid var(--accent); background: rgba(255, 77, 109, 0.08); }
+        .single-heart { font-size: 2.5rem; margin-top: 15px; color: var(--accent); filter: drop-shadow(0 0 10px var(--accent)); }
+
+        /* --- Navigation --- */
+        .nav-controls {
+            position: absolute; bottom: 8%; display: flex; flex-direction: column; align-items: center; gap: 20px;
+        }
+
+        .arrow-btn {
+            width: 70px; height: 70px; border: 1px solid var(--border);
+            border-radius: 50%; background: var(--glass); cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: 0.3s; color: var(--accent);
+        }
+
+        .arrow-btn:hover { border-color: var(--accent); transform: translateY(-5px); box-shadow: 0 10px 20px rgba(255, 77, 109, 0.2); }
+
+        .progress-dots { display: flex; gap: 12px; }
+        .dot { width: 8px; height: 8px; background: rgba(255,255,255,0.2); border-radius: 50%; transition: 0.3s; }
+        .dot.active { background: var(--accent); transform: scale(1.4); }
+
+        .cake-container { font-size: 6rem; cursor: pointer; margin: 1.5rem 0; filter: drop-shadow(0 0 15px rgba(255,255,255,0.3)); }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div id="intro">
+        <h2 style="font-weight: 200; margin-bottom: 2rem; letter-spacing: 2px;">Something Special From <span class="highlight">AsrixBD</span></h2>
+        <button class="unlock-btn" onclick="startStory()">Click Here</button>
+    </div>
+
+    <main id="story-container">
+        <div class="glass-card active" data-index="0">
+            <h2>Hello, Dear <span class="highlight">Oshu</span> 😊</h2>
+            <p>I wanted to create something as unique and beautiful as you are. Today is the day of yours.</p>
+        </div>
+
+        <div class="glass-card" data-index="1">
+            <h2 class="highlight">Your Presence</h2>
+            <p>Although you're not with me, I feel light and peaceful talking to you.</p>
+        </div>
+
+        <div class="glass-card" data-index="2">
+            <h2>A Little Wish</h2>
+            <div class="cake-container" onclick="blowCandle(this)">🎂</div>
+            <p id="wish-msg">Tap the cake to make a wish...</p>
+            <p style="margin-top: 25px;"><span class="highlight" style="font-size: 1.6rem;">**Happy Birthday**</span></p>
+        </div>
+
+        <div class="glass-card final-card" data-index="3">
+            <h2 class="highlight">Forever</h2>
+            <p>I want to be with you, want you beside me. Want to keep you happy. And we promised, to stay together forever, I'll always keep my promise.</p>
+            <p style="margin-top: 2rem; font-weight: 300;">At last I want to say,</p>
+            <h2 class="highlight" style="margin-top: 0.5rem;">I Love You.</h2>
+            <div class="single-heart">❤️</div>
+        </div>
+
+        <div class="nav-controls" style="display:none;" id="controls">
+            <button class="arrow-btn" id="nextBtn" onclick="nextCard()">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
+            </button>
+            <div class="progress-dots" id="dots"></div>
+        </div>
+    </main>
+
+    <script>
+        // --- 3D ENGINE (THREE.JS) ---
+        let scene, camera, renderer, hearts = [];
+        function init3D() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            const heartShape = new THREE.Shape();
+            heartShape.moveTo(5, 5);
+            heartShape.bezierCurveTo(5, 5, 4, 0, 0, 0);
+            heartShape.bezierCurveTo(-6, 0, -6, 7, -6, 7);
+            heartShape.bezierCurveTo(-6, 11, -3, 15.4, 5, 19);
+            heartShape.bezierCurveTo(12, 15.4, 16, 11, 16, 7);
+            heartShape.bezierCurveTo(16, 7, 16, 0, 10, 0);
+            heartShape.bezierCurveTo(7, 0, 5, 5, 5, 5);
+
+            const geometry = new THREE.ExtrudeGeometry(heartShape, { depth: 2, bevelEnabled: true, bevelThickness: 1, bevelSize: 1 });
+            const material = new THREE.MeshPhongMaterial({ color: 0xff4d6d, shininess: 90 });
+            const light = new THREE.PointLight(0xffffff, 1.5, 1000);
+            light.position.set(0, 50, 50);
+            scene.add(light, new THREE.AmbientLight(0x404040));
+
+            for(let i=0; i<65; i++) {
+                const heart = new THREE.Mesh(geometry, material);
+                resetHeart(heart);
+                heart.position.y = Math.random() * 300 - 150;
+                scene.add(heart);
+                hearts.push(heart);
+            }
+            camera.position.z = 100;
+            animate();
+        }
+
+        function resetHeart(h) {
+            h.position.set((Math.random()-0.5)*250, 160, (Math.random()-0.5)*100);
+            h.rotation.x = Math.PI;
+            h.rotation.z = Math.random() * Math.PI;
+            h.scale.set(0.6, 0.6, 0.6);
+            h.userData.speed = 0.35 + Math.random() * 0.65;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            hearts.forEach(h => {
+                h.position.y -= h.userData.speed;
+                h.rotation.y += 0.02;
+                if(h.position.y < -160) resetHeart(h);
+            });
+            renderer.render(scene, camera);
+        }
+
+        // --- STORY LOGIC ---
+        let currentIdx = 0;
+        const cards = document.querySelectorAll('.glass-card');
+        const dotsContainer = document.getElementById('dots');
+
+        function setupDots() {
+            cards.forEach((_, i) => {
+                const dot = document.createElement('div');
+                dot.className = `dot ${i === 0 ? 'active' : ''}`;
+                dotsContainer.appendChild(dot);
+            });
+        }
+
+        function startStory() {
+            gsap.to("#intro", { opacity: 0, scale: 0.9, duration: 0.8, onComplete: () => {
+                document.getElementById('intro').style.display = 'none';
+                document.getElementById('controls').style.display = 'flex';
+                animateCardIn(cards[0]);
+            }});
+        }
+
+        function nextCard() {
+            if (currentIdx < cards.length - 1) {
+                const oldCard = cards[currentIdx];
+                currentIdx++;
+                const newCard = cards[currentIdx];
+
+                gsap.to(oldCard, { opacity: 0, y: -40, scale: 0.9, duration: 0.5, onComplete: () => {
+                    oldCard.classList.remove('active');
+                    newCard.classList.add('active');
+                    animateCardIn(newCard);
+                }});
+
+                updateDots();
+                if(currentIdx === cards.length - 1) {
+                    gsap.to("#nextBtn", { opacity: 0, pointerEvents: 'none', duration: 0.3 });
+                }
+            }
+        }
+
+        function animateCardIn(card) {
+            gsap.fromTo(card, 
+                { opacity: 0, y: 60, scale: 0.8, rotationX: -15 },
+                { opacity: 1, y: 0, scale: 1, rotationX: 0, duration: 1, ease: "power4.out" }
+            );
+        }
+
+        function updateDots() {
+            const dots = document.querySelectorAll('.dot');
+            dots.forEach((dot, i) => dot.classList.toggle('active', i === currentIdx));
+        }
+
+        function blowCandle(el) {
+            el.innerHTML = '✨';
+            gsap.to(el, { scale: 1.4, duration: 0.4, yoyo: true, repeat: 1 });
+            document.getElementById('wish-msg').innerHTML = "<span class='highlight'>May all your dreams come true!</span>";
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        init3D();
+        setupDots();
+    </script>
+</body>
+</html>
